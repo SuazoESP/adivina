@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Adivinanza de Números</title>
+    <style>
+        body {
+            font-family: 'Press Start 2P', cursive;
+            text-align: center;
+            background-color: #000;
+            color: #fff;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #333;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            margin: 50px auto;
+            max-width: 400px;
+        }
+
+        h1 {
+            color: #ffdb58;
+        }
+
+        .input-container {
+            margin: 20px 0;
+        }
+
+        .input-container input[type="number"] {
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        #guessSubmit, #selectAttemptsButton {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #ffdb58;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #resultParas {
+            margin: 20px 0;
+            font-size: 20px;
+        }
+
+        .resultParas p {
+            margin: 5px;
+        }
+
+        #resetButton {
+            display: none;
+            background-color: #ffdb58;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        #resetButton:hover {
+            background-color: #ffdb00;
+        }
+
+        /* Estilos para el contador */
+        #timer {
+            font-size: 20px;
+            color: #fff;
+            transition: font-size 0.5s;
+        }
+
+        #countdown {
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Juego de Adivinanza de Números</h1>
+        <p>Intenta adivinar el número entre 1 y 100.</p>
+        <div class="input-container">
+            <input type="number" id="guessInput" min="1" max="100">
+            <input type="submit" value="Adivinar" id="guessSubmit" disabled>
+        </div>
+        <div id="resultParas">
+            <p class="guesses"></p>
+            <p class="lastResult"></p>
+            <p class="lowOrHi"></p>
+        </div>
+        <button id="resetButton" onclick="resetGame()">Empezar nuevo juego</button>
+        <div id="timer">Tiempo restante: <span id="countdown">60</span> s</div>
+    </div>
+
+    <div class="input-container">
+        <label for="attemptsInput">Número de Intentos:</label>
+        <input type="number" id="attemptsInput" min="1" value="10">
+        <button id="selectAttemptsButton" onclick="selectAttempts()">Seleccionar</button>
+    </div>
+
+    <script>
+        let attempts = 10;
+        let remainingAttempts = 0;
+        let allowAttemptsChange = true;
+        let gameStarted = false;
+        let countdown = 60; // Contador de tiempo inicial
+
+        let randomNumber = Math.floor(Math.random() * 100) + 1;
+        const guessSubmit = document.getElementById('guessSubmit');
+        const guessField = document.getElementById('guessInput');
+        const guesses = document.querySelector('.guesses');
+        const lastResult = document.querySelector('.lastResult');
+        const lowOrHi = document.querySelector('.lowOrHi');
+        const resetButton = document.getElementById('resetButton');
+        const attemptsInput = document.getElementById('attemptsInput');
+        const selectAttemptsButton = document.getElementById('selectAttemptsButton');
+        const countdownElement = document.getElementById('countdown');
+        const timerElement = document.getElementById('timer');
+        let guessCount = 1;
+        let resetCount = 1;
+
+        function selectAttempts() {
+            if (allowAttemptsChange) {
+                attempts = parseInt(attemptsInput.value);
+                remainingAttempts = attempts;
+                attemptsInput.disabled = true;
+                selectAttemptsButton.disabled = true;
+                allowAttemptsChange = false;
+                guessSubmit.disabled = false;
+            }
+        }
+
+        function checkGuess() {
+            if (!gameStarted) {
+                gameStarted = true;
+                lockAttemptsInput();
+            }
+
+            if (remainingAttempts > 0) {
+                let userGuess = Number(guessField.value);
+
+                if (guessCount === 1) {
+                    guesses.textContent = 'Intentos anteriores: ';
+                }
+
+                guesses.textContent += userGuess + ' ';
+                remainingAttempts--;
+
+                if (userGuess === randomNumber || remainingAttempts === 0) {
+                    if (userGuess === randomNumber) {
+                        const winnings = attempts * 5; // Calcular las ganancias
+                        lastResult.textContent = '¡Felicidades! ¡Ganaste ' + winnings + '!';
+                        lastResult.style.backgroundColor = '#4CAF50';
+                    } else {
+                        lastResult.textContent = '¡Se agotaron los intentos! El número era ' + randomNumber;
+                        lastResult.style.backgroundColor = '#FF5252';
+                    }
+                    lowOrHi.textContent = '';
+                    setGameOver();
+                } else {
+                    lastResult.textContent = '¡Incorrecto!';
+                    lastResult.style.backgroundColor = '#FF5252';
+                    if (userGuess < randomNumber) {
+                        lowOrHi.textContent = 'El número es más alto.';
+                    } else {
+                        lowOrHi.textContent = 'El número es más bajo.';
+                    }
+                    guessCount++;
+                    guessField.value = '';
+                    guessField.focus();
+                }
+            }
+        }
+
+        guessSubmit.addEventListener('click', checkGuess);
+
+        function setGameOver() {
+            guessField.disabled = true;
+            guessSubmit.disabled = true;
+            resetButton.style.display = 'block';
+            resetButton.addEventListener('click', resetGame);
+        }
+
+        function resetGame() {
+            guessCount = 1;
+            remainingAttempts = attempts;
+            attemptsInput.disabled = false;
+            selectAttemptsButton.disabled = false;
+            allowAttemptsChange = true;
+            attemptsInput.value = attempts;
+            gameStarted = false;
+            const resetParas = document.querySelectorAll('.resultParas p');
+            for (let i = 0; i < resetParas.length; i++) {
+                resetParas[i].textContent = '';
+            }
+            resetButton.style.display = 'none';
+            guessField.disabled = false;
+            guessSubmit.disabled = false;
+            guessField.value = '';
+            guessField.focus();
+            lastResult.style.backgroundColor = 'white';
+            randomNumber = Math.floor(Math.random() * 100) + 1;
+            resetCount++;
+            if (resetCount === 2) {
+                guesses.textContent = '';
+                resetCount = 1;
+            }
+        }
+
+        function lockAttemptsInput() {
+            attemptsInput.disabled = true;
+            selectAttemptsButton.disabled = true;
+        }
+
+        function updateCountdown() {
+            if (countdown === 10) {
+                // Cambiar el color a rojo y aplicar animación cuando falten 10 segundos
+                timerElement.style.color = '#ff0000';
+                timerElement.style.fontSize = '24px'; // Ampliar el tamaño de fuente
+                // Aplicar una animación de cambio de tamaño
+                setTimeout(() => {
+                    timerElement.style.fontSize = '20px'; // Volver al tamaño original
+                }, 500);
+            }
+
+            countdownElement.textContent = countdown;
+            countdown--;
+
+            if (countdown < 0) {
+                // Cuando el contador llega a 0, puedes realizar alguna acción aquí
+                // Por ejemplo, finalizar el juego o realizar alguna acción específica
+                clearInterval(countdownInterval);
+            }
+        }
+
+        // Actualizar el contador cada segundo
+        const countdownInterval = setInterval(updateCountdown, 1000);
+    </script>
+</body>
+</html>
